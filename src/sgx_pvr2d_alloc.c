@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+#include <xorg/xorg-server.h>
+#include <xorg/xorgVersion.h>
+
 #include "fbdev.h"
 #include "sgx_pvr2d.h"
 #include "sgx_pvr2d_alloc.h"
@@ -94,16 +97,27 @@ Bool PVR2DDelayedMemDestroy(Bool wait)
 	}
 	return FALSE;
 }
-
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 static void (*SavedBlockHandler) (int, pointer, pointer, pointer);
 
 static void PVR2DBlockHandler(int i, pointer blockData, pointer pTimeout,
 			      pointer pReadmask)
-{
-	ScreenPtr pScreen = screenInfo.screens[i];
+#else
+static void (*SavedBlockHandler) (ScreenPtr, pointer, pointer);
 
+static void PVR2DBlockHandler(ScreenPtr pScreen, pointer pTimeout,
+			      pointer pReadmask)
+#endif
+{
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
+	ScreenPtr pScreen = screenInfo.screens[i];
+#endif
 	pScreen->BlockHandler = SavedBlockHandler;
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 	(*pScreen->BlockHandler) (i, blockData, pTimeout, pReadmask);
+#else
+	(*pScreen->BlockHandler) (pScreen, pTimeout, pReadmask);
+#endif
 
 	if (PVR2DDelayedMemDestroy(FALSE)) {
 		/* More work -> keep block handler registered */

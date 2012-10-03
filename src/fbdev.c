@@ -31,6 +31,8 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 
+#include <xorg/xorgVersion.h>
+
 /* all driver need this */
 #include <X11/Xatom.h>
 #include "xf86.h"
@@ -77,8 +79,12 @@ static const OptionInfoRec *FBDevAvailableOptions(int chipid, int busid);
 static void FBDevIdentify(int flags);
 static Bool FBDevProbe(DriverPtr drv, int flags);
 static Bool FBDevPreInit(ScrnInfoPtr pScrn, int flags);
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 static Bool FBDevScreenInit(int Index, ScreenPtr pScreen, int argc,
 			    char **argv);
+#else
+static Bool FBDevScreenInit(ScreenPtr pScreen, int argc, char **argv);
+#endif
 static Bool FBDevSwitchMode(int scrnIndex, DisplayModePtr mode, int flags);
 static void FBDevAdjustFrame(int scrnIndex, int x, int y, int flags);
 static Bool FBDevEnterVT(int scrnIndex, int flags);
@@ -87,7 +93,11 @@ static void FBDevFreeScreen(int scrnIndex, int flags);
 static Bool FBDevValidMode(int scrnIndex, DisplayModePtr mode,
 			   Bool verbose, int flags);
 static Bool FBDevCreateScreenResources(ScreenPtr pScreen);
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 static Bool FBDevCloseScreen(int scrnIndex, ScreenPtr pScreen);
+#else
+static Bool FBDevCloseScreen(ScreenPtr pScreen);
+#endif
 static Bool fbdev_randr12_preinit(ScrnInfoPtr pScrn);
 static void fbdev_randr12_uninit(ScrnInfoPtr pScrn);
 
@@ -948,37 +958,43 @@ static void FBDevAdjustFrame(int scrnIndex, int x, int y, int flags)
 	if (crtc && crtc->enabled)
 		crtc->funcs->set_origin(crtc, x, y);
 }
-
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 static Bool FBDevScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 			    char **argv)
+#else
+static Bool FBDevScreenInit(ScreenPtr pScreen, int argc, char **argv)
+#endif
 {
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+#else
+	ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
+#endif
 	FBDevPtr fPtr = FBDEVPTR(pScrn);
 	VisualPtr visual;
 	unsigned int pitch;
 
 	ENTER();
-
-	xf86DrvMsgVerb(scrnIndex, X_INFO, 5,
+	xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 5,
 		"\tbitsPerPixel=%d, depth=%d, defaultVisual=%s\n"
 		"\tmask: %x,%x,%x, offset: %u,%u,%u\n", pScrn->bitsPerPixel,
 		pScrn->depth, xf86GetVisualName(pScrn->defaultVisual),
 		(unsigned)pScrn->mask.red, (unsigned)pScrn->mask.green,
 		(unsigned)pScrn->mask.blue, (unsigned)pScrn->offset.red,
 		(unsigned)pScrn->offset.green, (unsigned)pScrn->offset.blue);
-	xf86DrvMsgVerb(scrnIndex, X_INFO, 5,
+	xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 5,
 		"\tvirtualX=%d, virtualY=%d\n",
 		pScrn->virtualX, pScrn->virtualY);
 
 	if (!realloc_fb(pScrn, pScrn->virtualX, pScrn->virtualY,
 			pScrn->bitsPerPixel, pScrn->depth)) {
-		xf86DrvMsg(scrnIndex, X_ERROR,
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			   "Unable to allocate video memory\n");
 		return FALSE;
 	}
 
 	if (!omap_fb_get_info(fPtr->fb[0], NULL, NULL, &pitch)) {
-		xf86DrvMsg(scrnIndex, X_ERROR,
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			   "Unable to get framebuffer pitch\n");
 		return FALSE;
 	}
@@ -989,13 +1005,13 @@ static Bool FBDevScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 	miClearVisualTypes();
 	if (!miSetVisualTypes
 	    (pScrn->depth, TrueColorMask, pScrn->rgbBits, TrueColor)) {
-		xf86DrvMsg(scrnIndex, X_ERROR,
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			   "visual type setup failed"
 			   " for %d bits per pixel [1]\n", pScrn->bitsPerPixel);
 		return FALSE;
 	}
 	if (!miSetPixmapDepths()) {
-		xf86DrvMsg(scrnIndex, X_ERROR, "pixmap depth setup failed\n");
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "pixmap depth setup failed\n");
 		return FALSE;
 	}
 
@@ -1003,7 +1019,7 @@ static Bool FBDevScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 	    (pScreen, get_fbmem(fPtr), pScrn->virtualX, pScrn->virtualY,
 	     pScrn->xDpi, pScrn->yDpi, pScrn->displayWidth,
 	     pScrn->bitsPerPixel)) {
-		xf86DrvMsg(scrnIndex, X_ERROR, "fbScreenInit failed\n");
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "fbScreenInit failed\n");
 		return FALSE;
 	}
 
@@ -1022,7 +1038,7 @@ static Bool FBDevScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 
 	/* must be after RGB ordering fixed */
 	if (!fbPictureInit(pScreen, NULL, 0)) {
-		xf86DrvMsg(scrnIndex, X_ERROR,
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			   "Render extension initialisation failed\n");
 		return FALSE;
 	}
@@ -1055,7 +1071,7 @@ static Bool FBDevScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 				RR_Reflect_X | RR_Reflect_Y);
 
 	if (!miCreateDefColormap(pScreen)) {
-		xf86DrvMsg(scrnIndex, X_ERROR,
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			   "internal error: failed to create colormap\n");
 		return FALSE;
 	}
@@ -1138,9 +1154,17 @@ static Bool FBDevCreateScreenResources(ScreenPtr pScreen)
 	return res;
 }
 
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 static Bool FBDevCloseScreen(int scrnIndex, ScreenPtr pScreen)
+#else
+static Bool FBDevCloseScreen(ScreenPtr pScreen)
+#endif
 {
-	ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
+	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+#else
+	ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
+#endif
 	FBDevPtr fPtr = FBDEVPTR(pScrn);
 
 	ExtFBCloseScreen(pScreen);
@@ -1163,7 +1187,11 @@ static Bool FBDevCloseScreen(int scrnIndex, ScreenPtr pScreen)
 	pScrn->vtSema = FALSE;
 
 	pScreen->CloseScreen = fPtr->CloseScreen;
+#if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 	return (*pScreen->CloseScreen) (scrnIndex, pScreen);
+#else
+	return (*pScreen->CloseScreen) (pScreen);
+#endif
 }
 
 /* -------------------------------------------------------------------- */
