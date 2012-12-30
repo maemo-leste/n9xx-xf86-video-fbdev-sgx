@@ -1738,7 +1738,7 @@ bool omap_overlay_setup(struct omap_overlay *ovl,
 		goto error_putv;
 	}
 
-#if 1
+#if 0
 	if (mirror != ovl->mirror) {
 		/*
 		 * FIXME should use the omapfb_plane_info.mirror instead.
@@ -1760,12 +1760,11 @@ bool omap_overlay_setup(struct omap_overlay *ovl,
 
 	ovl->var = var;
 	ovl->plane_info = plane_info;
-	ovl->mirror = mirror;
 
 	LEAVE();
 	return true;
 
-#if 1
+#if 0
  error_setup_plane:
 	ioctl(ovl->fd, OMAPFB_SETUP_PLANE, &ovl->plane_info);
 #endif
