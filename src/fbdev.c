@@ -39,7 +39,6 @@
 #include "xf86_OSproc.h"
 
 #include "mipointer.h"
-#include "mibstore.h"
 #include "micmap.h"
 #include "colormapst.h"
 #include "xf86cmap.h"
@@ -1049,7 +1048,6 @@ static Bool FBDevScreenInit(ScreenPtr pScreen, int argc, char **argv)
 	fbdev_init_video(pScreen, 2, fPtr->fb[2], fPtr->fb[1]);
 
 	xf86SetBlackWhitePixels(pScreen);
-	miInitializeBackingStore(pScreen);
 	xf86SetBackingStore(pScreen);
 
 	pScrn->vtSema = TRUE;
