@@ -24,7 +24,8 @@
 # _ladir passes a dummy rpath to libtool so the thing will actually link
 # TODO: -nostdlib/-Bstatic/-lgcc platform magic, not installing the .a, etc.
 PVR2D_SGX = 530
-PVR2D_REV = 125
+PVR2D_REV = 121
+# PVR2D_REV = 125
 PVR2D_CFLAGS = \
 	       -DLINUX \
 	       -DSGX_CORE_REV=$(PVR2D_REV) \
