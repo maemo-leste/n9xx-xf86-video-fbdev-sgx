@@ -135,7 +135,7 @@ void ExtFBCloseScreen(ScreenPtr pScreen)
 	FBDevPtr fbdev = FBDEVPTR(pScrn);
 
 	if (fbdev->extfb.damage) {
-		DamageUnregister(&fbdev->pixmap->drawable, fbdev->extfb.damage);
+		DamageUnregister(fbdev->extfb.damage);
 		DamageDestroy(fbdev->extfb.damage);
 	}
 }
