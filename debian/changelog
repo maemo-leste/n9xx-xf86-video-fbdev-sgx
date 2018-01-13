@@ -1,3 +1,9 @@
+xserver-xorg-video-fbdev (2:0.4.0-245) unstable; urgency=medium
+
+  * Increment epoch to prefer this package.
+
+ -- Ivan J. <parazyd@dyne.org>  Sun, 14 Jan 2018 00:42:00 +0100
+
 xserver-xorg-video-fbdev (1:0.4.0-245) unstable; urgency=medium
 
   * Prepare jessie package [Wizzup]
