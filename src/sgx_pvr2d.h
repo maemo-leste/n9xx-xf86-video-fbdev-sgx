@@ -23,7 +23,7 @@
 #ifndef SGX_PVR2D_H
 #define SGX_PVR2D_H
 
-#include "xorg-server.h"
+#include <xorg-server.h>
 #include "xf86.h"
 
 #define PVR2D_EXT_BLIT 1

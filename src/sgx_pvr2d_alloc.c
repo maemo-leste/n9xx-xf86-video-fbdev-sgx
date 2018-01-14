@@ -102,11 +102,15 @@ static void (*SavedBlockHandler) (int, pointer, pointer, pointer);
 
 static void PVR2DBlockHandler(int i, pointer blockData, pointer pTimeout,
 			      pointer pReadmask)
-#else
+#elif XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,19,0,0,0)
 static void (*SavedBlockHandler) (ScreenPtr, pointer, pointer);
 
 static void PVR2DBlockHandler(ScreenPtr pScreen, pointer pTimeout,
 			      pointer pReadmask)
+#else
+static void (*SavedBlockHandler) (ScreenPtr, pointer);
+
+static void PVR2DBlockHandler(ScreenPtr pScreen, pointer pTimeout)
 #endif
 {
 #if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
@@ -115,8 +119,10 @@ static void PVR2DBlockHandler(ScreenPtr pScreen, pointer pTimeout,
 	pScreen->BlockHandler = SavedBlockHandler;
 #if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,13,0,0,0)
 	(*pScreen->BlockHandler) (i, blockData, pTimeout, pReadmask);
-#else
+#elif XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,19,0,0,0)
 	(*pScreen->BlockHandler) (pScreen, pTimeout, pReadmask);
+#else
+	(*pScreen->BlockHandler) (pScreen, pTimeout);
 #endif
 
 	if (PVR2DDelayedMemDestroy(FALSE)) {
