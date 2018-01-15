@@ -150,17 +150,23 @@ Bool PVR2D_PreFBReset(ScrnInfoPtr scrn_info)
 	return TRUE;
 }
 
+
+
 static void pvr2d_wakeup_handler(pointer data, int err, pointer p)
 {
 	int fd = (int)data;
+#if HAVE_NOTIFY_FD
 	fd_set *read_mask = p;
+#endif
 	char buf[1024];
 	int len;
 	int i;
 	const struct pvr_event *e;
 
+#if HAVE_NOTIFY_FD
 	if (err <= 0 || !FD_ISSET(fd, read_mask))
 		return;
+#endif
 
 	len = read(fd, buf, sizeof(buf));
 
@@ -197,6 +203,13 @@ static void pvr2d_wakeup_handler(pointer data, int err, pointer p)
 		}
 	}
 }
+
+#if HAVE_NOTIFY_FD
+static void pvr2d_notify_fd(int fd, int notify, void *data) {
+    pvr2d_wakeup_handler((pointer)fd, 0, NULL);
+}
+#endif
+
 
 Bool PVR2D_Init(ScrnInfoPtr scrn_info)
 {
@@ -262,17 +275,26 @@ Bool PVR2D_Init(ScrnInfoPtr scrn_info)
 	if (screen->fd < 0)
 		goto destroy_page_flip;
 
+
+#if HAVE_NOTIFY_FD
+ 	SetNotifyFd(screen->fd, pvr2d_notify_fd, X_NOTIFY_READ, scrn_info);
+#else
 	AddGeneralSocket(screen->fd);
 
 	if (!RegisterBlockAndWakeupHandlers((BlockHandlerProcPtr)NoopDDA,
 					    pvr2d_wakeup_handler,
 					    (pointer)screen->fd))
 		goto remove_socket;
+#endif
 
 	return TRUE;
 
+#ifdef HAVE_NOTIFY_FD
+#else
  remove_socket:
 	RemoveGeneralSocket(screen->fd);
+#endif
+
  destroy_page_flip:
 #if SGX_CACHE_SEGMENTS
 	DeInitSharedSegments();
@@ -289,7 +311,11 @@ void PVR2D_DeInit(void)
 {
 	struct pvr2d_screen *screen = pvr2d_get_screen();
 
+#ifdef HAVE_NOTIFY_FD
+	RemoveNotifyFd(screen->fd);
+#else
 	RemoveGeneralSocket(screen->fd);
+#endif
 
 #if SGX_CACHE_SEGMENTS
 	DeInitSharedSegments();

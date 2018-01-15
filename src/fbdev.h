@@ -46,6 +46,10 @@
 #define FBDEV_NAME              "FBDEV"
 #define FBDEV_DRIVER_NAME       "fbdev"
 
+#if ABI_VIDEODRV_VERSION >= SET_ABI_VERSION(22,0)
+#define HAVE_NOTIFY_FD  1
+#endif
+
 #if 0
 #define CALLTRACE(...)		ErrorF(__VA_ARGS__)
 #define DBGCOMPOSITE(...)	ErrorF(__VA_ARGS__)
