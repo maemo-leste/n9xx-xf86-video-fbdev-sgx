@@ -24,6 +24,7 @@
 #define SGX_PVR2D_FLIP_H
 
 #include <X11/Xdefs.h>
+#include <xorg-server.h>
 #include "pixmap.h"
 #include "pvr2d.h"
 

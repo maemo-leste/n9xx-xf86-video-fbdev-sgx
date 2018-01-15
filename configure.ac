@@ -74,6 +74,9 @@ if test "x$FLIP_STATS" = xyes; then
     AC_DEFINE(FLIP_STATS, 1, [Enable flip statistics framework])
 fi
 
+# To get HAVE_STRNDUP
+AC_CHECK_FUNCS([strndup])
+
 # Checks for libraries.
 
 # Checks for header files.
